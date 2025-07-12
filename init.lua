@@ -1,97 +1,12 @@
---[[
-
-=====================================================================
-==================== READ THIS BEFORE CONTINUING ====================
-=====================================================================
-========                                    .-----.          ========
-========         .----------------------.   | === |          ========
-========         |.-""""""""""""""""""-.|   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||   KICKSTART.NVIM   ||   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||                    ||   |-----|          ========
-========         ||:Tutor              ||   |:::::|          ========
-========         |'-..................-'|   |____o|          ========
-========         `"")----------------(""`   ___________      ========
-========        /::::::::::|  |::::::::::\  \ no mouse \     ========
-========       /:::========|  |==hjkl==:::\  \ required \    ========
-========      '""""""""""""'  '""""""""""""'  '""""""""""'   ========
-========                                                     ========
-=====================================================================
-=====================================================================
-
-What is Kickstart?
-
-  Kickstart.nvim is *not* a distribution.
-
-  Kickstart.nvim is a starting point for your own configuration.
-    The goal is that you can read every line of code, top-to-bottom, understand
-    what your configuration is doing, and modify it to suit your needs.
-
-    Once you've done that, you can start exploring, configuring and tinkering to
-    make Neovim your own! That might mean leaving Kickstart just the way it is for a while
-    or immediately breaking it into modular pieces. It's up to you!
-
-    If you don't know anything about Lua, I recommend taking some time to read through
-    a guide. One possible example which will only take 10-15 minutes:
-      - https://learnxinyminutes.com/docs/lua/
-
-    After understanding a bit more about Lua, you can use `:help lua-guide` as a
-    reference for how Neovim integrates Lua.
-    - :help lua-guide
-    - (or HTML version): https://neovim.io/doc/user/lua-guide.html
-
-Kickstart Guide:
-
-  TODO: The very first thing you should do is to run the command `:Tutor` in Neovim.
-
-    If you don't know what this means, type the following:
-      - <escape key>
-      - :
-      - Tutor
-      - <enter key>
-
-    (If you already know the Neovim basics, you can skip this step.)
-
-  Once you've completed that, you can continue working through **AND READING** the rest
-  of the kickstart init.lua.
-
-  Next, run AND READ `:help`.
-    This will open up a help window with some basic information
-    about reading, navigating and searching the builtin help documentation.
-
-    This should be the first place you go to look when you're stuck or confused
-    with something. It's one of my favorite Neovim features.
-
-    MOST IMPORTANTLY, we provide a keymap "<space>sh" to [s]earch the [h]elp documentation,
-    which is very useful when you're not exactly sure of what you're looking for.
-
-  I have left several `:help X` comments throughout the init.lua
-    These are hints about where to find more information about the relevant settings,
-    plugins or Neovim features used in Kickstart.
-
-   NOTE: Look for lines like this
-
-    Throughout the file. These are for you, the reader, to help you understand what is happening.
-    Feel free to delete them once you know what you're doing, but they should serve as a guide
-    for when you are first encountering a few different constructs in your Neovim config.
-
-If you experience any errors while trying to install kickstart, run `:checkhealth` for more info.
-
-I hope you enjoy your Neovim journey,
-- TJ
-
-P.S. You can delete this when you're done too. It's your config now! :)
---]]
-
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
+vim.keymap.set('n', '<Space>', '<Nop>', { noremap = true, silent = true })
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -185,10 +100,10 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 -- TIP: Disable arrow keys in normal mode
--- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
--- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
--- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
--- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
+vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
+vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
+vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
+vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
 
 -- Keybinds to make split navigation easier.
 --  Use CTRL+<hjkl> to switch between windows
@@ -217,6 +132,37 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   callback = function()
     vim.hl.on_yank()
   end,
+})
+
+-- Group for COBOL specific settings
+vim.api.nvim_create_augroup('CobolSettings', { clear = true })
+
+-- COBOL-specific settings
+vim.api.nvim_create_autocmd('FileType', {
+  group = 'CobolSettings',
+  pattern = 'cobol',
+  callback = function()
+    -- Set specific columns to highlight
+    vim.opt.colorcolumn = '7,11,72'
+    -- Delay highlight customization to avoid conflicts
+    vim.schedule(function()
+      -- Use compatible colors
+      vim.cmd [[highlight ColorColumn ctermbg=233 guibg=#12121d]]
+    end)
+  end,
+  desc = 'Set COBOL column guidelines',
+})
+
+-- Clear colorcolumn for non-COBOL files
+vim.api.nvim_create_autocmd('FileType', {
+  group = 'CobolSettings',
+  pattern = '*',
+  callback = function(args)
+    if vim.bo[args.buf].filetype ~= 'cobol' then
+      vim.opt.colorcolumn = ''
+    end
+  end,
+  desc = 'Clear colorcolumn for non-COBOL files',
 })
 
 -- [[ Install `lazy.nvim` plugin manager ]]
@@ -530,6 +476,7 @@ require('lazy').setup({
           --
           -- In this case, we create a function that lets us more easily define mappings specific
           -- for LSP related items. It sets the mode, buffer and description for us each time.
+
           local map = function(keys, func, desc, mode)
             mode = mode or 'n'
             vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
@@ -671,6 +618,8 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
+        cobol_ls = {},
+        jdtls = {},
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
@@ -699,7 +648,91 @@ require('lazy').setup({
           },
         },
       }
+      local jdtls_config = {
+        cmd = {
+          '/home/fabian/.jdks/openjdk-24.0.1/bin/java', -- CONFIRMED CORRECT PATH FOR YOUR JAVA EXECUTABLE
+          '-Declipse.application=org.eclipse.jdt.ls.core.id1',
+          '-Dosgi.bundles.defaultStartLevel=4',
+          '-Declipse.product=org.eclipse.jdt.ls.core.product',
+          '-Dlog.protocol=true', -- Good for debugging, can be removed later
+          '-Dlog.level=ALL', -- Good for debugging, can be removed later
+          '-noverify', -- Re-added: Often needed for JDTLS on newer JDKs
+          '-Xmx1G', -- Memory allocation
+          '--add-modules=ALL-SYSTEM',
+          -- Re-added comprehensive --add-opens for newer JDKs
+          '--add-opens',
+          'java.base/java.util=ALL-UNNAMED',
+          '--add-opens',
+          'java.base/java.util.concurrent=ALL-UNNAMED',
+          '--add-opens',
+          'java.base/java.lang=ALL-UNNAMED',
+          '--add-opens',
+          'java.base/java.nio=ALL-UNNAMED',
+          '--add-opens',
+          'java.base/sun.nio.ch=ALL-UNNAMED',
+          '--add-opens',
+          'java.base/sun.security.ssl=ALL-UNNAMED',
+          '--add-opens',
+          'java.base/com.sun.security.ntlm=ALL-UNNAMED',
+          '-jar',
+          vim.fn.glob(vim.fn.stdpath 'data' .. '/mason/packages/jdtls/plugins/org.eclipse.equinox.launcher_*.jar'),
+          '-configuration',
+          -- CORRECTED PATH: Removed the duplicated `~/.local/share/nvim/` part
+          vim.fn.glob(vim.fn.stdpath 'data' .. '/mason/packages/jdtls/config_linux'), -- Make sure 'config_linux' is right for your OS
+          '-data',
+          -- CORRECTED PATH: Moved workspace data out of Mason install dir for cleanliness
+          vim.fn.expand('~/.local/share/nvim/jdtls-workspace/' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':p:h:t')),
+          -- ^^ This sets a unique workspace per project directory
+        },
+        filetypes = { 'java' },
+        root_dir = require('lspconfig.util').root_pattern('pom.xml', 'build.gradle', '.git', 'src'),
+        settings = {
+          java = {
+            signatureHelp = { enabled = true },
+            completion = {
+              maxResults = 100,
+              guessMethodArgumentValues = true,
+            },
+            -- Add more Java-specific settings here if needed
+            -- e.g., if you want to explicitly tell JDTLS where a specific JDK is located,
+            -- but usually cmd[1] is sufficient.
+            -- home = '/home/fabian/.jdks/openjdk-24.0.1',
+          },
+        },
+        -- Custom on_attach to handle specific JDTLS features (optional but good practice)
+        on_attach = function(client, bufnr)
+          -- Your existing on_attach keymaps and autocmds
+          vim.api.nvim_create_autocmd('BufWritePost', {
+            group = vim.api.nvim_create_augroup('JdtlsOnSave', { clear = true }),
+            buffer = bufnr,
+            callback = function()
+              -- Ensure this only applies if the client is jdtls to avoid issues with other LSPs
+              if client.name == 'jdtls' then
+                vim.lsp.buf.code_action { context = { only = { 'source.organizeImports' } }, apply = true }
+              end
+            end,
+            desc = 'Organize imports on save (JDTLS)',
+          })
 
+          local map = function(keys, func, desc, mode)
+            mode = mode or 'n'
+            vim.keymap.set(mode, keys, func, { buffer = bufnr, desc = 'LSP: ' .. desc })
+          end
+
+          map('grn', vim.lsp.buf.rename, '[R]e[n]ame')
+          map('gra', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
+          map('grr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
+          map('gri', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
+          map('grd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
+          map('grD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
+          map('gO', require('telescope.builtin').lsp_document_symbols, 'Open Document Symbols')
+          map('gW', require('telescope.builtin').lsp_dynamic_workspace_symbols, 'Open Workspace Symbols')
+          map('grt', require('telescope.builtin').lsp_type_definitions, '[G]oto [T]ype Definition')
+          -- ... and any other mappings you want for Java
+        end,
+        capabilities = capabilities, -- Ensure capabilities are passed
+      }
+      require('lspconfig').jdtls.setup(jdtls_config)
       -- Ensure the servers and tools above are installed
       --
       -- To check the current status of installed tools and/or manually install
@@ -716,6 +749,8 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'cobol_ls',
+        'jdtls',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
