@@ -288,6 +288,34 @@ require('lazy').setup({
         },
       },
 
+      {
+        'xiyaowong/transparent.nvim',
+        lazy = false,
+        config = function()
+          require('transparent').setup {
+            groups = {
+              'Normal',
+              'NormalNC',
+              'NonText',
+              'SignColumn',
+              'CursorLine',
+              'CursorLineNr',
+              'LineNr',
+              'StatusLine',
+              'StatusLineNC',
+              'EndOfBuffer',
+              'NormalFloat',
+              'FloatBorder',
+            },
+            extra_groups = {
+              'NeoTreeNormal',
+              'NeoTreeNormalNC',
+              -- Add more plugin groups if needed
+            },
+            exclude_groups = {},
+          }
+        end,
+      },
       -- Document existing key chains
       spec = {
         { '<leader>s', group = '[S]earch' },
@@ -930,6 +958,9 @@ require('lazy').setup({
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
       vim.cmd.colorscheme 'tokyonight-night'
+      vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
+      vim.api.nvim_set_hl(0, 'NormalNC', { bg = 'none' })
+      vim.api.nvim_set_hl(0, 'SignColumn', { bg = 'none' })
     end,
   },
 
