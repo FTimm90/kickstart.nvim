@@ -459,7 +459,7 @@ require('lazy').setup({
       { 'mason-org/mason.nvim', opts = {} },
       'mason-org/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
-
+      'jay-babu/mason-nvim-dap.nvim',
       -- Useful status updates for LSP.
       { 'j-hui/fidget.nvim', opts = {} },
 
@@ -507,6 +507,7 @@ require('lazy').setup({
 
           local map = function(keys, func, desc, mode)
             mode = mode or 'n'
+
             vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
           end
 
@@ -650,7 +651,32 @@ require('lazy').setup({
         jdtls = {},
         -- clangd = {},
         -- gopls = {},
-        -- pyright = {},
+
+        pyright = {
+          -- Pyright specific settings
+          settings = {
+            python = {
+              analysis = {
+                autoSearchPaths = true,
+                diagnosticMode = 'workspace',
+                useLibraryCodeForTypes = true,
+                typeCheckingMode = 'basic', -- "off", "basic", "strict"
+              },
+            },
+          },
+          -- Crucial for Pyright to detect project root
+          root_dir = require('lspconfig.util').root_pattern(
+            'pyproject.toml',
+            'setup.py',
+            'setup.cfg',
+            'requirements.txt',
+            'Pipfile',
+            'pyrightconfig.json',
+            '.git'
+          ),
+        },
+
+        bashls = {},
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -659,7 +685,33 @@ require('lazy').setup({
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
-        --
+
+        ruff = {
+          -- Ruff for linting and formatting. It's often set up to handle formatting on save.
+          -- You could also use conform.nvim for formatting, but Ruff is very fast.
+          -- Ensure Ruff client capabilities include formatting if you want it to handle that.
+          on_attach = function(client, bufnr)
+            -- Your standard on_attach keymaps will apply here.
+            -- Add an autocmd for format on save if Ruff should handle it:
+            vim.api.nvim_create_autocmd('BufWritePre', {
+              group = vim.api.nvim_create_augroup('LspFormattingRuff', { clear = true }),
+              buffer = bufnr,
+              callback = function()
+                if client.name == 'ruff' and client.server_capabilities.documentFormattingProvider then
+                  vim.lsp.buf.format { bufnr = bufnr, async = false }
+                end
+              end,
+              desc = 'Format on save (Ruff LSP)',
+            })
+            -- If Ruff also provides organize imports or other code actions, you'd enable them here
+            if client.name == 'ruff' then
+              client.server_capabilities.codeActionProvider = true
+            end
+          end,
+          settings = {
+            args = {}, -- Any specific Ruff CLI arguments you want to pass
+          },
+        },
 
         lua_ls = {
           -- cmd = { ... },
@@ -678,13 +730,11 @@ require('lazy').setup({
       }
       local jdtls_config = {
         cmd = {
-          '/home/fabian/.jdks/openjdk-24.0.1/bin/java', -- CONFIRMED CORRECT PATH FOR YOUR JAVA EXECUTABLE
+          '/home/fabian/.jdks/openjdk-24.0.1/bin/java',
           '-Declipse.application=org.eclipse.jdt.ls.core.id1',
           '-Dosgi.bundles.defaultStartLevel=4',
           '-Declipse.product=org.eclipse.jdt.ls.core.product',
-          '-Dlog.protocol=true', -- Good for debugging, can be removed later
-          '-Dlog.level=ALL', -- Good for debugging, can be removed later
-          '-noverify', -- Re-added: Often needed for JDTLS on newer JDKs
+          '-noverify',
           '-Xmx1G', -- Memory allocation
           '--add-modules=ALL-SYSTEM',
           -- Re-added comprehensive --add-opens for newer JDKs
@@ -705,12 +755,9 @@ require('lazy').setup({
           '-jar',
           vim.fn.glob(vim.fn.stdpath 'data' .. '/mason/packages/jdtls/plugins/org.eclipse.equinox.launcher_*.jar'),
           '-configuration',
-          -- CORRECTED PATH: Removed the duplicated `~/.local/share/nvim/` part
-          vim.fn.glob(vim.fn.stdpath 'data' .. '/mason/packages/jdtls/config_linux'), -- Make sure 'config_linux' is right for your OS
+          vim.fn.glob(vim.fn.stdpath 'data' .. '/mason/packages/jdtls/config_linux'),
           '-data',
-          -- CORRECTED PATH: Moved workspace data out of Mason install dir for cleanliness
           vim.fn.expand('~/.local/share/nvim/jdtls-workspace/' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':p:h:t')),
-          -- ^^ This sets a unique workspace per project directory
         },
         filetypes = { 'java' },
         root_dir = require('lspconfig.util').root_pattern('pom.xml', 'build.gradle', '.git', 'src'),
@@ -736,7 +783,10 @@ require('lazy').setup({
             callback = function()
               -- Ensure this only applies if the client is jdtls to avoid issues with other LSPs
               if client.name == 'jdtls' then
-                vim.lsp.buf.code_action { context = { only = { 'source.organizeImports' } }, apply = true }
+                vim.lsp.buf.code_action {
+                  context = { only = { 'source.organizeImports' } },
+                  apply = true,
+                }
               end
             end,
             desc = 'Organize imports on save (JDTLS)',
@@ -760,6 +810,7 @@ require('lazy').setup({
         end,
         capabilities = capabilities, -- Ensure capabilities are passed
       }
+
       require('lspconfig').jdtls.setup(jdtls_config)
       -- Ensure the servers and tools above are installed
       --
@@ -768,7 +819,6 @@ require('lazy').setup({
       --    :Mason
       --
       -- You can press `g?` for help in this menu.
-      --
       -- `mason` had to be setup earlier: to configure its options see the
       -- `dependencies` table for `nvim-lspconfig` above.
       --
@@ -778,7 +828,13 @@ require('lazy').setup({
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
         'cobol_ls',
+        -- Java LSP
         'jdtls',
+        -- Python LSP
+        'pyright', -- Microsoft's Pyright LSP
+        'ruff', -- Ruff for linting and formatting (very fast!)
+        -- Python Debugger
+        'debugpy', -- Python debugger for nvim-dap
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -965,7 +1021,12 @@ require('lazy').setup({
   },
 
   -- Highlight todo, notes, etc in comments
-  { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
+  {
+    'folke/todo-comments.nvim',
+    event = 'VimEnter',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    opts = { signs = false },
+  },
 
   { -- Collection of various small independent plugins/modules
     'echasnovski/mini.nvim',
@@ -1010,7 +1071,19 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = {
+        'bash',
+        'c',
+        'diff',
+        'html',
+        'lua',
+        'luadoc',
+        'markdown',
+        'markdown_inline',
+        'query',
+        'vim',
+        'vimdoc',
+      },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -1040,6 +1113,7 @@ require('lazy').setup({
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
   require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.dap_python',
   require 'kickstart.plugins.indent_line',
   require 'kickstart.plugins.lint',
   require 'kickstart.plugins.autopairs',
