@@ -142,6 +142,13 @@ vim.api.nvim_create_autocmd('FileType', {
   group = 'CobolSettings',
   pattern = 'cobol',
   callback = function()
+    -- Set indent options for COBOL
+    vim.bo.tabstop = 4
+    vim.bo.shiftwidth = 4
+    vim.bo.softtabstop = 4
+    vim.bo.expandtab = true
+    vim.bo.autoindent = true
+    vim.bo.smartindent = true
     -- Set specific columns to highlight
     vim.opt.colorcolumn = '7,11,72'
     -- Delay highlight customization to avoid conflicts
@@ -151,6 +158,16 @@ vim.api.nvim_create_autocmd('FileType', {
     end)
   end,
   desc = 'Set COBOL column guidelines',
+})
+
+-- Auto-indent before save
+vim.api.nvim_create_autocmd('BufWritePre', {
+  group = 'CobolSettings',
+  pattern = '*.cob',
+  callback = function()
+    vim.cmd 'normal! gg=G'
+  end,
+  desc = 'Auto-indent COBOL code before saving',
 })
 
 -- Clear colorcolumn for non-COBOL files
