@@ -33,6 +33,9 @@ vim.schedule(function()
   vim.o.clipboard = 'unnamedplus'
 end)
 
+-- COBOL specific settings
+require 'cobol'
+
 -- Enable break indent
 vim.o.breakindent = true
 
@@ -132,44 +135,6 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   callback = function()
     vim.hl.on_yank()
   end,
-})
-
--- Group for COBOL specific settings
-vim.api.nvim_create_augroup('CobolSettings', { clear = true })
-
--- COBOL-specific settings
-vim.api.nvim_create_autocmd('FileType', {
-  group = 'CobolSettings',
-  pattern = 'cobol',
-  callback = function()
-    -- Set indent options for COBOL
-    vim.bo.tabstop = 4
-    vim.bo.shiftwidth = 4
-    vim.bo.softtabstop = 4
-    vim.bo.expandtab = true
-    vim.bo.autoindent = true
-    vim.bo.smartindent = false
-    -- Set specific columns to highlight
-    vim.opt.colorcolumn = '7,11,72'
-    -- Delay highlight customization to avoid conflicts
-    vim.schedule(function()
-      -- Use compatible colors
-      vim.cmd [[highlight ColorColumn ctermbg=233 guibg=#12121d]]
-    end)
-  end,
-  desc = 'Set COBOL column guidelines',
-})
-
--- Clear colorcolumn for non-COBOL files
-vim.api.nvim_create_autocmd('FileType', {
-  group = 'CobolSettings',
-  pattern = '*',
-  callback = function(args)
-    if vim.bo[args.buf].filetype ~= 'cobol' then
-      vim.opt.colorcolumn = ''
-    end
-  end,
-  desc = 'Clear colorcolumn for non-COBOL files',
 })
 
 -- [[ Install `lazy.nvim` plugin manager ]]
