@@ -137,6 +137,15 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   end,
 })
 
+-- Enable omnifunc completion in SQL buffers
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = { 'sql', 'mysql', 'plsql' },
+  callback = function()
+    -- tell vim to use dadbod-completion for omnifunc
+    vim.bo.omnifunc = 'vim_dadbod_completion#omni'
+  end,
+})
+
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
@@ -166,14 +175,23 @@ rtp:prepend(lazypath)
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
-
+  'tpope/vim-dadbod', -- Database plugin
+  'kristijanhusak/vim-dadbod-ui', -- UI for Database plugin
+  'kristijanhusak/vim-dadbod-completion', -- Autocomplete
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
   -- keys can be used to configure plugin behavior/loading/etc.
   --
   -- Use `opts = {}` to automatically pass options to a plugin's `setup()` function, forcing the plugin to be loaded.
   --
-
+  {
+    'tpope/vim-dadbod',
+    opt = true,
+    requires = {
+      'kristijanhusak/vim-dadbod-ui',
+      'kristijanhusak/vim-dadbod-completion',
+    },
+  },
   -- Alternatively, use `config = function() ... end` for full control over the configuration.
   -- If you prefer to call `setup` explicitly, use:
   --    {
@@ -941,13 +959,14 @@ require('lazy').setup({
       completion = {
         -- By default, you may press `<c-space>` to show the documentation.
         -- Optionally, set `auto_show = true` to show the documentation after a delay.
-        documentation = { auto_show = false, auto_show_delay_ms = 500 },
+        documentation = { auto_show = true, auto_show_delay_ms = 500 },
       },
 
       sources = {
-        default = { 'lsp', 'path', 'snippets', 'lazydev' },
+        default = { 'lsp', 'path', 'snippets', 'lazydev', 'omni' },
         providers = {
           lazydev = { module = 'lazydev.integrations.blink', score_offset = 100 },
+          omni = { name = 'omni', module = 'blink.cmp.sources.complete_func', score_offset = 90 },
         },
       },
 
@@ -1055,6 +1074,7 @@ require('lazy').setup({
         'query',
         'vim',
         'vimdoc',
+        'sql',
       },
       -- Autoinstall languages that are not installed
       auto_install = true,
