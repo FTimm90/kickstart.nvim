@@ -178,6 +178,7 @@ require('lazy').setup({
   'tpope/vim-dadbod', -- Database plugin
   'kristijanhusak/vim-dadbod-ui', -- UI for Database plugin
   'kristijanhusak/vim-dadbod-completion', -- Autocomplete
+  'S1M0N38/love2d.nvim', -- love2d extra
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
   -- keys can be used to configure plugin behavior/loading/etc.
@@ -314,17 +315,17 @@ require('lazy').setup({
       },
     },
   },
-{
-  "S1M0N38/love2d.nvim",
-  event = "VeryLazy",
-  version = "2.*",
-  opts = { },
-  keys = {
-    { "<leader>v", ft = "lua", desc = "LÖVE" },
-    { "<leader>vv", "<cmd>LoveRun<cr>", ft = "lua", desc = "Run LÖVE" },
-    { "<leader>vs", "<cmd>LoveStop<cr>", ft = "lua", desc = "Stop LÖVE" },
+  {
+    'S1M0N38/love2d.nvim',
+    event = 'VeryLazy',
+    version = '2.*',
+    opts = {},
+    keys = {
+      { '<leader>v', ft = 'lua', desc = 'LÖVE' },
+      { '<leader>vv', '<cmd>LoveRun<cr>', ft = 'lua', desc = 'Run LÖVE' },
+      { '<leader>vs', '<cmd>LoveStop<cr>', ft = 'lua', desc = 'Stop LÖVE' },
+    },
   },
-},
   -- NOTE: Plugins can specify dependencies.
   --
   -- The dependencies are proper plugin specifications as well - anything
@@ -811,7 +812,8 @@ require('lazy').setup({
         capabilities = capabilities, -- Ensure capabilities are passed
       }
 
-      require('lspconfig').jdtls.setup(jdtls_config)
+      vim.lsp.config.jdtls = jdtls_config
+      vim.lsp.enable 'jdtls'
       -- Ensure the servers and tools above are installed
       --
       -- To check the current status of installed tools and/or manually install
@@ -848,7 +850,9 @@ require('lazy').setup({
             -- by the server configuration above. Useful when disabling
             -- certain features of an LSP (for example, turning off formatting for ts_ls)
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
+
+            vim.lsp.config[server_name] = server
+            vim.lsp.enable(server_name)
           end,
         },
       }
