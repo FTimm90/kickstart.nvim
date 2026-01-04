@@ -447,6 +447,16 @@ require('lazy').setup({
       library = {
         -- Load luvit types when the `vim.uv` word is found
         { path = '${3rd}/luv/library', words = { 'vim%.uv' } },
+        { path = 'love2d', words = { 'love' } },
+      },
+      lspconfig = {
+        settings = {
+          Lua = {
+            diagnostics = {
+              globals = { 'love' },
+            },
+          },
+        },
       },
     },
   },
@@ -722,6 +732,9 @@ require('lazy').setup({
             Lua = {
               completion = {
                 callSnippet = 'Replace',
+              },
+              diagnostics = {
+                globals = { 'love' },
               },
               -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
               -- diagnostics = { disable = { 'missing-fields' } },
