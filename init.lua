@@ -36,6 +36,11 @@ end)
 -- COBOL specific settings
 require 'cobol'
 
+-- Settings for indentation
+vim.opt.tabstop = 4 -- A TAB character looks like 4 spaces
+vim.opt.softtabstop = 4 -- Number of spaces a <Tab> counts for while editing
+vim.opt.shiftwidth = 4 -- Size of an indentation (for >>, <<, etc.)
+
 -- Enable break indent
 vim.o.breakindent = true
 
@@ -650,7 +655,7 @@ require('lazy').setup({
       local servers = {
         cobol_ls = {},
         jdtls = {},
-        -- clangd = {},
+        clangd = {},
         -- gopls = {},
 
         pyright = {
